@@ -1,6 +1,21 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Enable dark mode */
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+/* Custom CSS Variables for Dark Mode */
+:root {
+  --color-primary-light: #3b82f6;
+  --color-primary-dark: #8b5cf6;
+  --color-bg-light: #f9fafb;
+  --color-bg-dark: #111827;
+  --color-card-light: #ffffff;
+  --color-card-dark: #1f2937;
+  --color-text-light: #111827;
+  --color-text-dark: #f9fafb;
+}
 
 body {
   margin: 0;
@@ -9,6 +24,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
@@ -16,56 +32,45 @@ code {
     monospace;
 }
 
-.App {
-  text-align: center;
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 6px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
 }
 
-.App-header {
-  background-color: #282c34;
-  padding: 20px;
-  color: white;
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
 }
 
-.App-link {
-  color: #61dafb;
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Custom scrollbar */
+/* Light mode scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #94a3b8;
 }
 
 /* Custom animations */
@@ -74,8 +79,26 @@ code {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
 .fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
 }
 
 /* Card hover effects */
@@ -88,44 +111,48 @@ code {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+.dark .card-hover:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
 /* Custom button styles */
 .btn-primary {
-  @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-medium;
+  @apply bg-blue-600 dark:bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-purple-700 transition duration-200 font-medium;
 }
 
 .btn-secondary {
-  @apply bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 font-medium;
+  @apply bg-gray-500 dark:bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition duration-200 font-medium;
 }
 
 .btn-success {
-  @apply bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 font-medium;
+  @apply bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition duration-200 font-medium;
 }
 
 .btn-danger {
-  @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200 font-medium;
+  @apply bg-red-600 dark:bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition duration-200 font-medium;
 }
 
 /* Form input styles */
 .form-input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200;
+  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-purple-500 transition duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
 }
 
 .form-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
 }
 
 /* Dashboard specific styles */
 .dashboard-card {
-  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition duration-200 hover:shadow-md;
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition duration-200 hover:shadow-md;
 }
 
 .stat-card {
-  @apply bg-white p-6 rounded-lg shadow-sm border border-gray-200;
+  @apply bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300;
 }
 
 /* Transaction item styles */
 .transaction-item {
-  @apply flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition duration-200 border-b border-gray-100 last:border-b-0;
+  @apply flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition duration-200 border-b border-gray-100 dark:border-gray-700 last:border-b-0;
 }
 
 /* Category badge styles */
@@ -134,16 +161,21 @@ code {
 }
 
 .category-income {
-  @apply bg-green-100 text-green-800;
+  @apply bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300;
 }
 
 .category-expense {
-  @apply bg-red-100 text-red-800;
+  @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300;
 }
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin rounded-full border-2 border-gray-300 border-t-blue-600;
+  @apply animate-spin rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-blue-600 dark:border-t-purple-600;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  @apply p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700;
 }
 
 /* Responsive design helpers */
@@ -155,54 +187,163 @@ code {
   .mobile-stack {
     @apply flex-col space-y-2 space-x-0;
   }
+  
+  .mobile-grid {
+    @apply grid-cols-1;
+  }
+}
+
+@media (max-width: 768px) {
+  .tablet-stack {
+    @apply flex-col space-y-4;
+  }
+  
+  .tablet-full {
+    @apply w-full;
+  }
 }
 
 /* Custom gradient backgrounds */
-.gradient-bg-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.gradient-bg-primary-light {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.gradient-bg-primary-dark {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
 }
 
 .gradient-bg-success {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .gradient-bg-danger {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.gradient-bg-login-light {
+  background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+}
+
+.gradient-bg-login-dark {
+  background: linear-gradient(135deg, #581c87 0%, #4c1d95 100%);
 }
 
 /* Chart container styles */
 .chart-container {
-  @apply bg-white p-6 rounded-lg shadow-sm border border-gray-200;
+  @apply bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300;
   position: relative;
-  height: 300px;
 }
 
-/* Modal overlay */
+/* Modal styles */
 .modal-overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  @apply fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300;
 }
 
 .modal-content {
-  @apply bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6;
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6 transform transition-transform duration-300;
 }
 
 /* Toast notifications */
 .toast {
-  @apply fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium;
+  @apply fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium transform transition-transform duration-300;
 }
 
 .toast-success {
-  @apply bg-green-500;
+  @apply bg-green-500 dark:bg-green-600;
 }
 
 .toast-error {
-  @apply bg-red-500;
+  @apply bg-red-500 dark:bg-red-600;
 }
 
 .toast-warning {
-  @apply bg-yellow-500;
+  @apply bg-yellow-500 dark:bg-yellow-600;
 }
 
 .toast-info {
-  @apply bg-blue-500;
+  @apply bg-blue-500 dark:bg-purple-600;
+}
+
+/* Profile avatar styles */
+.profile-avatar {
+  @apply w-24 h-24 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-2xl font-semibold text-gray-600 dark:text-gray-300 transition-colors duration-300;
+}
+
+.profile-avatar-small {
+  @apply w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-semibold text-gray-600 dark:text-gray-300;
+}
+
+/* Focus styles for accessibility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-purple-500 focus:ring-opacity-50;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Chart.js custom styles for dark mode */
+.dark .chartjs-render-monitor {
+  background: transparent !important;
+}
+
+/* Hide elements in print mode */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .form-input {
+    border-width: 2px;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-success, .btn-danger {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.content-auto {
+  content-visibility: auto;
+}
+
+/* Dark mode specific adjustments */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.dark input[type="file"]::-webkit-file-upload-button {
+  background: #4b5563;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+/* Selection colors */
+::selection {
+  background: #3b82f6;
+  color: white;
+}
+
+.dark ::selection {
+  background: #8b5cf6;
+  color: white;
 }

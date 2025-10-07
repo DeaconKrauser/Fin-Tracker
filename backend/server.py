@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 from enum import Enum
+import base64
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -40,11 +41,17 @@ class TransactionType(str, Enum):
     INCOME = "income"
     EXPENSE = "expense"
 
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
+
 # User Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     name: str
+    role: UserRole = UserRole.USER
+    avatar: Optional[str] = None  # Base64 encoded image
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
@@ -56,6 +63,11 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -66,12 +78,14 @@ class Category(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     type: TransactionType
+    color: str = "#3B82F6"  # Default blue color
     user_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CategoryCreate(BaseModel):
     name: str
     type: TransactionType
+    color: Optional[str] = "#3B82F6"
 
 # Transaction Models
 class Transaction(BaseModel):
@@ -100,6 +114,7 @@ class DashboardSummary(BaseModel):
 
 class CategorySummary(BaseModel):
     category_name: str
+    category_color: str
     total_amount: float
     transaction_count: int
 
@@ -108,6 +123,14 @@ class MonthlySummary(BaseModel):
     income: float
     expense: float
     balance: float
+
+class UserSummary(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    transactions_count: int
+    created_at: datetime
 
 # Authentication helper functions
 def create_access_token(data: dict):
@@ -161,14 +184,14 @@ async def register(user_data: UserCreate):
     
     await db.users.insert_one({**user.dict(), 'password': user_dict['password']})
     
-    # Create default categories
+    # Create default categories with colors
     default_categories = [
-        {"name": "Salário", "type": TransactionType.INCOME, "user_id": user.id},
-        {"name": "Freelance", "type": TransactionType.INCOME, "user_id": user.id},
-        {"name": "Alimentação", "type": TransactionType.EXPENSE, "user_id": user.id},
-        {"name": "Transporte", "type": TransactionType.EXPENSE, "user_id": user.id},
-        {"name": "Lazer", "type": TransactionType.EXPENSE, "user_id": user.id},
-        {"name": "Contas", "type": TransactionType.EXPENSE, "user_id": user.id}
+        {"name": "Salário", "type": TransactionType.INCOME, "color": "#10B981", "user_id": user.id},
+        {"name": "Freelance", "type": TransactionType.INCOME, "color": "#059669", "user_id": user.id},
+        {"name": "Alimentação", "type": TransactionType.EXPENSE, "color": "#EF4444", "user_id": user.id},
+        {"name": "Transporte", "type": TransactionType.EXPENSE, "color": "#F59E0B", "user_id": user.id},
+        {"name": "Lazer", "type": TransactionType.EXPENSE, "color": "#8B5CF6", "user_id": user.id},
+        {"name": "Contas", "type": TransactionType.EXPENSE, "color": "#DC2626", "user_id": user.id}
     ]
     
     categories = [Category(**cat_data) for cat_data in default_categories]
@@ -187,6 +210,73 @@ async def login(login_data: UserLogin):
     user = User(**{k: v for k, v in user_doc.items() if k != 'password'})
     access_token = create_access_token(data={"sub": user.id})
     return Token(access_token=access_token, token_type="bearer", user=user)
+
+# User Profile Routes
+@api_router.get("/profile", response_model=User)
+async def get_profile(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@api_router.put("/profile", response_model=User)
+async def update_profile(profile_data: UserUpdate, current_user: User = Depends(get_current_user)):
+    update_fields = {}
+    
+    if profile_data.name:
+        update_fields['name'] = profile_data.name
+    
+    if profile_data.new_password and profile_data.current_password:
+        # Verify current password
+        user_doc = await db.users.find_one({"id": current_user.id})
+        if not verify_password(profile_data.current_password, user_doc['password']):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        update_fields['password'] = hash_password(profile_data.new_password)
+    
+    if update_fields:
+        await db.users.update_one({"id": current_user.id}, {"$set": update_fields})
+        updated_user = await db.users.find_one({"id": current_user.id})
+        return User(**{k: v for k, v in updated_user.items() if k != 'password'})
+    
+    return current_user
+
+@api_router.post("/profile/avatar")
+async def upload_avatar(avatar_data: dict, current_user: User = Depends(get_current_user)):
+    # avatar_data should contain base64 encoded image
+    if 'avatar' not in avatar_data:
+        raise HTTPException(status_code=400, detail="Avatar data required")
+    
+    await db.users.update_one({"id": current_user.id}, {"$set": {"avatar": avatar_data['avatar']}})
+    return {"message": "Avatar updated successfully"}
+
+# User Management Routes (Admin only)
+async def get_admin_user(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+@api_router.get("/users", response_model=List[UserSummary])
+async def get_users(admin_user: User = Depends(get_admin_user)):
+    users = await db.users.find({}, {"password": 0}).to_list(100)
+    user_summaries = []
+    
+    for user in users:
+        transaction_count = await db.transactions.count_documents({"user_id": user['id']})
+        user_summaries.append(UserSummary(
+            id=user['id'],
+            name=user['name'],
+            email=user['email'],
+            role=user.get('role', 'user'),
+            transactions_count=transaction_count,
+            created_at=user['created_at']
+        ))
+    
+    return user_summaries
+
+@api_router.put("/users/{user_id}/role")
+async def update_user_role(user_id: str, role_data: dict, admin_user: User = Depends(get_admin_user)):
+    if 'role' not in role_data or role_data['role'] not in ['user', 'admin']:
+        raise HTTPException(status_code=400, detail="Valid role required")
+    
+    await db.users.update_one({"id": user_id}, {"$set": {"role": role_data['role']}})
+    return {"message": "User role updated successfully"}
 
 # Category Routes
 @api_router.get("/categories", response_model=List[Category])
@@ -259,6 +349,7 @@ async def get_categories_summary(current_user: User = Depends(get_current_user))
         if category:
             summaries.append(CategorySummary(
                 category_name=category["name"],
+                category_color=category.get("color", "#3B82F6"),
                 total_amount=result["total_amount"],
                 transaction_count=result["transaction_count"]
             ))
