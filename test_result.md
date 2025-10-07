@@ -237,9 +237,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication system (JWT)"
-    - "Transaction CRUD operations"
-    - "Dashboard summary APIs"
+    - "Dashboard with financial summary cards"
+    - "Transaction management interface"
+    - "Category summary display"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
