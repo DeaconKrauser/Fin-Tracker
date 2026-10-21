@@ -14,14 +14,23 @@ import jwt
 import bcrypt
 from enum import Enum
 import base64
+import re, logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("server")
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(ROOT_DIR / ".env")
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+MONGO_URL = os.getenv("MONGO_URL", "mongodb://127.0.0.1:27017/fintracker")
+DB_NAME   = os.getenv("DB_NAME", "fintracker")
+
+MASKED = re.sub(r"://(.*?):(.*?)@", r"://\\1:***@", MONGO_URL)
+logger.info("🔧 Mongo URL efetiva: %s | DB=%s", MASKED, DB_NAME)
+
+client = AsyncIOMotorClient(MONGO_URL)
+db = client[DB_NAME]
+
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -405,6 +414,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+@app.on_event("startup")
+async def _ping_mongo():
+    try:
+        await client.admin.command("ping")
+        logger.info("✅ Mongo conectado")
+    except Exception as e:
+        logger.exception("❌ Falha ao conectar no Mongo: %s", e)
