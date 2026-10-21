@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Backend URL from frontend .env
-BASE_URL = "https://financas-tracker-3.preview.emergentagent.com/api"
+BASE_URL = "http://localhost:8000/api"
 
 class FinancialSystemTester:
     def __init__(self):

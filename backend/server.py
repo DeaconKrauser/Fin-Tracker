@@ -39,7 +39,9 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # JWT Configuration
-SECRET_KEY = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
+SECRET_KEY = os.environ.get('JWT_SECRET')
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET não definido. Configure no backend/.env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 24  # 30 days
 
